@@ -12,7 +12,14 @@ genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro")
 
 # Set up BigQuery client
-bq_client = bigquery.Client()
+# bq_client = bigquery.Client()
+from google.oauth2 import service_account
+
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+bq_client = bigquery.Client(credentials=credentials, project=credentials.project_id)
+
 
 # Streamlit UI
 st.set_page_config(page_title="GenAI BigQuery App", layout="centered")
