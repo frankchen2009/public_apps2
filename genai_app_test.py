@@ -24,4 +24,36 @@ bq_client = bigquery.Client(
 
 # 🎨 Streamlit UI setup
 st.set_page_config(page_title="GenAI BigQuery App", layout="centered")
-st.t
+st.title("🔍 Ask BigQuery with Natural Language")
+st.markdown("Enter a natural language question and click **Run Query** to see results from BigQuery.")
+
+# 💬 User input
+user_input = st.text_input("💬 Your question:", placeholder="e.g., show first 5 rows of salesorder")
+
+# ▶️ Run the query
+if st.button("▶️ Run Query") and user_input:
+    try:
+        with st.spinner("⏳ Generating SQL and querying BigQuery..."):
+            # Prompt Gemini to generate SQL
+            prompt = f"""You are a data expert. Convert the following request to BigQuery Standard SQL:
+            {user_input}
+            Assume the table name is `southern-coda-463018-j8.mydataset1.salesorder`."""
+            response = model.generate_content(prompt)
+
+            # 🧹 Clean up Gemini output
+            sql = response.text.strip()
+            if sql.startswith("```sql"):
+                sql = sql.replace("```sql", "").replace("```", "").strip()
+
+            st.subheader("Generated SQL:")
+            st.code(sql, language="sql")
+
+            # 🔎 Query BigQuery
+            query_job = bq_client.query(sql)
+            result_df = query_job.to_dataframe()
+
+            st.subheader("Query Results:")
+            st.dataframe(result_df)
+
+    except Exception as e:
+        st.error(f"❌ Error: {e}")
